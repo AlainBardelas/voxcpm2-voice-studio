@@ -6,6 +6,8 @@ ENV PYTHONUNBUFFERED=1 \
     TOKENIZERS_PARALLELISM=false \
     MODEL_PATH=/opt/voxcpm2-model
 WORKDIR /app
+RUN python -m venv --system-site-packages /opt/voice-env
+ENV PATH="/opt/voice-env/bin:${PATH}"
 COPY requirements.lock ./
 RUN python -m pip install --no-cache-dir --no-compile -r requirements.lock
 RUN python -c "from huggingface_hub import snapshot_download; snapshot_download('openbmb/VoxCPM2', revision='32279effe8c19989596f05d353d1447f51d9e915', local_dir='/opt/voxcpm2-model')"
