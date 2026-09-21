@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.runpod.ai; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>VoxCPM2 Voice Studio</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.mjs"></script>
+</head>
+<body>
+<main>
+  <header><div><span class="eyebrow">YOUR VOICE, IN SPANISH</span><h1>Voice Studio<span>.</span></h1><p>Bring the voice. Write the words. Keep the character.</p></div><button id="logout" class="quiet" hidden>Lock studio</button></header>
+  <section id="login-panel" class="card login">
+    <h2>Unlock your studio</h2><p>Enter your private studio access key. You can use the same key on your other devices.</p>
+    <form id="login-form"><label for="access-key">Studio access key</label><input id="access-key" name="password" type="password" autocomplete="current-password" required placeholder="Your private access key"><button id="login-button" type="submit">Unlock studio</button></form>
+    <p class="muted">The key stays in this tab until you lock or reload it. It is never saved by this page.</p>
+  </section>
+  <div id="studio" hidden>
+    <div class="notice"><span class="dot"></span><span>The GPU starts when you generate and shuts down automatically afterward.</span></div>
+    <div class="grid">
+      <section class="card"><h2>1. Add the voice</h2><label class="upload" for="reference">Choose a voice recording<input id="reference" type="file" accept="audio/*"></label><p id="reference-info" class="muted">One speaker, with the accent you want. A clean 5–30 second clip is a good starting point. Up to 60 seconds, 25 MB.</p><audio id="reference-player" controls hidden></audio><button id="clear-reference" class="quiet" hidden>Remove recording</button><p class="muted">Leave the recording empty to try a generated voice.</p>
+        <details><summary>Exact transcript · optional</summary><label for="transcript">The words spoken in your recording</label><textarea id="transcript" rows="4" maxlength="8000" placeholder="Add an accurate transcript to use Ultimate Cloning."></textarea><p class="muted">Use the recording's exact words. This mode is designed for a closer match.</p></details>
+      </section>
+      <section class="card"><h2>2. Write what it should say</h2><label for="text">Words to say</label><textarea id="text" rows="7" maxlength="1500" placeholder="Escribe aquí el texto que quieres escuchar…"></textarea><p class="muted"><span id="character-count">0</span> / 1,500 characters</p><details><summary>Generation settings</summary><label for="steps">Generation steps</label><select id="steps"><option value="10">10 · Standard</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option></select><p class="muted">More steps take longer and do not guarantee a closer accent match.</p></details><div class="actions"><button id="generate">Generate speech</button><button id="cancel" class="quiet" hidden>Cancel generation</button></div></section>
+    </div>
+    <section class="card result"><h2>3. Listen and save</h2><p id="result-hint" class="muted">Your generated voice will appear here.</p><audio id="result-player" controls hidden></audio><a id="download" class="download" hidden>Download WAV</a><p id="result-details" class="muted"></p></section>
+    <footer>Your recording goes directly to your Runpod endpoint. This website does not store it.<br>First generation can take longer while a GPU starts. Download audio you want to keep.</footer>
+  </div>
+  <div id="status" role="status" aria-live="polite"></div>
+</main>
+</body>
+</html>

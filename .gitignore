@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.env*
+*secret*
+login.txt
+*.wav
+*.flac
+*.log
+test-results.json
+credentials.json

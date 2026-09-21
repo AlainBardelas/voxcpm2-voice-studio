@@ -1,0 +1,12 @@
+.git
+.venv
+__pycache__
+.env*
+*secret*
+credentials.json
+login.txt
+*.wav
+*.flac
+*.log
+site
+tests
