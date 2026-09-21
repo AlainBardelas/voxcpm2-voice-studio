@@ -4,7 +4,7 @@ const $ = id => document.getElementById(id);
 let key = '', endpoint = '', jobId = '', referenceUrl = '', resultUrl = '';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const status = (message, error = false) => { $('status').textContent = message; $('status').classList.toggle('error', error); };
-const busy = value => { $('generate').disabled = value; $('cancel').hidden = !value; $('logout').disabled = value; };
+const busy = value => { $('generate').disabled = value; $('cancel').hidden = !value || !jobId; $('logout').disabled = value; };
 const savedJobKey = () => `voxcpm-job-${endpoint}`;
 
 async function api(path, method = 'GET', body) {
@@ -55,7 +55,8 @@ async function poll(id, submitted) {
       if (jobId !== id) return;
       const elapsed = Math.round((Date.now() - submitted) / 1000);
       if (result.status === 'COMPLETED') {
-        forgetJob(); await showResult(result.output, result.executionTime, result.delayTime);
+        if (result.output?.error) { forgetJob(); throw new Error(result.output.error); }
+        await showResult(result.output, result.executionTime, result.delayTime); forgetJob();
         status('Your audio is ready. The GPU will shut down automatically after it becomes idle.'); return;
       }
       if (['FAILED', 'CANCELLED', 'TIMED_OUT'].includes(result.status)) {
@@ -98,6 +99,11 @@ $('clear-reference').addEventListener('click', () => { $('reference').value = ''
 
 $('generate').addEventListener('click', async () => {
   if (jobId) return;
+  let saved = null;
+  try { saved = JSON.parse(sessionStorage.getItem(savedJobKey()) || 'null'); } catch {}
+  if (saved && typeof saved.id === 'string' && Date.now() - saved.submitted < 660000) {
+    await poll(saved.id, saved.submitted); return;
+  }
   busy(true); status('Preparing your request…');
   try {
     const text = $('text').value.trim(), transcript = $('transcript').value.trim();
