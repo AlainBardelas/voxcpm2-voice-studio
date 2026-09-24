@@ -1,55 +1,55 @@
-"""Runpod queue worker for the full, unquantized VoxCPM2 model."""
+"""One endpoint, two isolated model runtimes, one GPU job at a time."""
+import json
 import logging
-import os
+import subprocess
 import tempfile
 import time
 from pathlib import Path
 
 import runpod
-import torch
-from voxcpm import VoxCPM
 
-from audio_protocol import decode_reference, encode_result, validate_input
+from audio_protocol import decode_reference, validate_input, validate_model
 
-model = VoxCPM.from_pretrained(
-    os.environ.get("MODEL_PATH", "/opt/voxcpm2-model"),
-    device="cuda",
-    load_denoiser=False,
-    optimize=False,
-)
-print("VOXCPM2_READY", torch.cuda.get_device_name(0), flush=True)
+PYTHONS = {"voxcpm2": "/opt/voice-env/bin/python", "qwen3-tts": "/opt/qwen-env/bin/python"}
 
 
 def handler(job):
     started = time.monotonic()
     try:
-        text, transcript, steps, reference = validate_input(job.get("input"))
+        value = job.get("input")
+        text, transcript, steps, reference = validate_input(value)
+        model, audio_only = validate_model(value)
         raw_reference = decode_reference(reference) if reference else None
-        with tempfile.TemporaryDirectory(prefix="voxcpm-job-") as directory:
-            path = None
+        with tempfile.TemporaryDirectory(prefix="voice-job-") as directory:
+            root = Path(directory)
+            reference_path = root / "reference.wav"
             if raw_reference:
-                path = str(Path(directory) / "reference.wav")
-                Path(path).write_bytes(raw_reference)
-            kwargs = dict(
-                text=text,
-                reference_wav_path=path,
-                cfg_value=2.0,
-                inference_timesteps=steps,
-                normalize=False,
-                denoise=False,
+                reference_path.write_bytes(raw_reference)
+            request_path, result_path = root / "input.json", root / "output.json"
+            request_path.write_text(json.dumps({
+                "model": model, "text": text, "transcript": transcript,
+                "steps": steps, "audio_only": audio_only,
+                "reference_path": str(reference_path) if raw_reference else None,
+            }))
+            # The subprocess releases all GPU memory and keeps each model's
+            # pinned Transformers version independent when switching models.
+            subprocess.run(
+                [PYTHONS[model], str(Path(__file__).with_name("generate.py")),
+                 str(request_path), str(result_path)],
+                check=True, timeout=560,
             )
-            if path and transcript:
-                kwargs.update(prompt_wav_path=path, prompt_text=transcript)
-            waveform = model.generate(**kwargs)
-            result = encode_result(waveform, model.tts_model.sample_rate)
+            result = json.loads(result_path.read_text())
             result["generation_seconds"] = round(time.monotonic() - started, 3)
             return result
     except ValueError as error:
         return {"error": str(error)}
+    except subprocess.TimeoutExpired:
+        return {"error": "Generation took too long. Try a shorter passage or reference excerpt."}
     except Exception:
         logging.exception("Generation failed")
         return {"error": "Generation failed. Try a shorter passage or a different recording."}
 
 
 if __name__ == "__main__":
+    print("VOICE_STUDIO_READY: voxcpm2, qwen3-tts", flush=True)
     runpod.serverless.start({"handler": handler, "concurrency_modifier": lambda _: 1})

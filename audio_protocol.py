@@ -6,9 +6,25 @@ import io
 import numpy as np
 import soundfile as sf
 
-MAX_REFERENCE_BYTES = 6_000_000
+MAX_REFERENCE_BYTES = 7_200_000
 MAX_OUTPUT_BYTES = 7_000_000
-MAX_REFERENCE_SECONDS = 60
+MAX_REFERENCE_SECONDS = 180
+MODELS = {"voxcpm2": 48000, "qwen3-tts": 24000}
+
+
+def validate_model(value):
+    model = value.get("model", "voxcpm2")
+    if not isinstance(model, str) or model not in MODELS:
+        raise ValueError("Choose VoxCPM2 or Qwen3-TTS Base.")
+    audio_only = value.get("audio_only", False)
+    if not isinstance(audio_only, bool):
+        raise ValueError("Audio-only mode must be true or false.")
+    if model == "qwen3-tts":
+        if not value.get("reference_audio_base64"):
+            raise ValueError("Qwen3-TTS Base needs a voice recording to clone.")
+        if not audio_only and not value.get("transcript", "").strip():
+            raise ValueError("Add the recording's exact transcript, or explicitly choose Qwen's audio-only mode.")
+    return model, audio_only
 
 
 def validate_input(value):
@@ -18,7 +34,7 @@ def validate_input(value):
     transcript = value.get("transcript", "")
     if not isinstance(text, str) or not 1 <= len(text.strip()) <= 1500:
         raise ValueError("Enter between 1 and 1,500 characters to say.")
-    if not isinstance(transcript, str) or len(transcript) > 8000:
+    if not isinstance(transcript, str) or len(transcript) > 24000:
         raise ValueError("The reference transcript is too long.")
     steps = value.get("steps", 10)
     if isinstance(steps, bool) or steps not in (10, 15, 20, 25, 30):
@@ -43,7 +59,7 @@ def decode_reference(encoded):
         if info.format not in ("WAV", "FLAC"):
             raise ValueError("Send reference audio as WAV or FLAC.")
         if not 1 <= info.duration <= MAX_REFERENCE_SECONDS:
-            raise ValueError("Use a recording between 1 and 60 seconds.")
+            raise ValueError("Use a reference excerpt between 1 second and 3 minutes.")
         if info.channels != 1 or info.samplerate != 16000:
             raise ValueError("Reference audio must be mono at 16 kHz.")
         samples, rate = sf.read(io.BytesIO(raw), dtype="float32")
@@ -58,7 +74,7 @@ def encode_result(waveform, sample_rate):
     samples = np.asarray(waveform, dtype=np.float32).reshape(-1)
     if not samples.size or not np.isfinite(samples).all():
         raise ValueError("The model returned invalid audio. Try again.")
-    if sample_rate != 48000:
+    if sample_rate not in MODELS.values():
         raise ValueError("Unexpected model sample rate.")
     if len(samples) > 180 * sample_rate:
         raise ValueError("The result is too long. Generate a shorter passage.")
