@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {referenceExcerpt, checkOutput} from '../site/models.mjs';
+import {referenceExcerpt, checkOutput, resultWarning} from '../site/models.mjs';
 import {pcm16Wav} from '../site/audio.mjs';
 
 test('a long recording sends only the selected three-minute excerpt', () => {
@@ -23,4 +23,12 @@ test('a Vox result cannot be displayed as Qwen during an old worker rollout', ()
   const qwen = {...vox, model:'qwen3-tts', sample_rate:24000};
   assert.equal(checkOutput(qwen, 'qwen3-tts').sampleRate, 24000);
   assert.throws(() => checkOutput({...qwen, sample_rate:48000}, 'qwen3-tts'), /invalid audio/);
+});
+
+test('flags the observed long-reference duration outlier without rejecting normal speech', () => {
+  const text = 'Hola, esta es una prueba para comparar las dos voces.';
+  assert.match(resultWarning(99.8, text), /extra or repeated speech/);
+  assert.equal(resultWarning(3.2, text), '');
+  assert.equal(resultWarning(100, 'Una frase para leer. '.repeat(50)), '');
+  assert.equal(resultWarning(100, ''), '');
 });

@@ -35,7 +35,7 @@ GitHub Pages serves `site/` through the root redirect. The endpoint ID in `site/
 
 Requests go directly to `https://api.runpod.ai`. Checking endpoint health does not start a GPU. Job submission is never automatically retried; a submitted job ID and model are kept in session storage so a reload can reconnect after unlocking without buying another generation. The access key, reference recording and transcript are not saved in session storage.
 
-Switching models retains inputs and the latest result from each model, with model-specific download names and native sample rates. A result from the wrong model is rejected rather than mislabeled. Results remain in tab memory until reload or lock. Closing the page does not cancel an existing job; use Cancel. Download recordings before leaving the page.
+Switching models retains inputs and the latest result from each model, with model-specific download names and native sample rates. A result from the wrong model is rejected rather than mislabeled. Unusually long output relative to the requested text is visibly flagged as possibly containing extra or repeated speech. This is a duration heuristic, not a transcription or voice-quality assessment. Results remain in tab memory until reload or lock. Closing the page does not cancel an existing job; use Cancel. Download recordings before leaving the page.
 
 ## Costs
 

@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.runpod.ai; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Voice Studio · Qwen3-TTS + VoxCPM2</title>
-  <link rel="stylesheet" href="style.css?v=2">
-  <script type="module" src="app.mjs?v=2"></script>
+  <link rel="stylesheet" href="style.css?v=3">
+  <script type="module" src="app.mjs?v=3"></script>
 </head>
 <body>
 <main>
@@ -31,8 +31,8 @@
       <section class="card"><h2>2. Write what it should say</h2><label for="text">Words to say</label><textarea id="text" rows="7" maxlength="1500" placeholder="Escribe aquí el texto que quieres escuchar…"></textarea><p class="muted"><span id="character-count">0</span> / 1,500 characters · Spanish</p><details id="vox-settings" hidden><summary>VoxCPM2 generation settings</summary><label for="steps">Generation steps</label><select id="steps"><option value="10">10 · Standard</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option></select><p class="muted">More steps take longer and do not guarantee a closer accent match.</p></details><div class="actions"><button id="generate">Generate with Qwen3-TTS</button><button id="cancel" class="quiet" hidden>Cancel generation</button></div><p class="muted">To compare, generate once with each model using the same recording, excerpt, transcript and words. Switching models keeps your inputs.</p></section>
     </div>
     <section class="card result"><h2>3. Compare and save</h2><p class="muted">Listen for the person's voice, Cuban pronunciation and natural rhythm. Each model's latest result stays here until you reload or lock the studio.</p><div class="grid results-grid">
-      <article class="model-result"><h3>Qwen3-TTS · 1.7B Base</h3><p id="qwen3-tts-hint" class="muted">No result yet.</p><audio id="qwen3-tts-player" controls hidden></audio><a id="qwen3-tts-download" class="download" hidden>Download Qwen WAV</a><p id="qwen3-tts-details" class="muted"></p><p id="qwen3-tts-text" class="result-text"></p></article>
-      <article class="model-result"><h3>VoxCPM2</h3><p id="voxcpm2-hint" class="muted">No result yet.</p><audio id="voxcpm2-player" controls hidden></audio><a id="voxcpm2-download" class="download" hidden>Download VoxCPM2 WAV</a><p id="voxcpm2-details" class="muted"></p><p id="voxcpm2-text" class="result-text"></p></article>
+      <article class="model-result"><h3>Qwen3-TTS · 1.7B Base</h3><p id="qwen3-tts-hint" class="muted">No result yet.</p><audio id="qwen3-tts-player" controls hidden></audio><a id="qwen3-tts-download" class="download" hidden>Download Qwen WAV</a><p id="qwen3-tts-details" class="muted"></p><p id="qwen3-tts-warning" class="result-warning" role="status" hidden></p><p id="qwen3-tts-text" class="result-text"></p></article>
+      <article class="model-result"><h3>VoxCPM2</h3><p id="voxcpm2-hint" class="muted">No result yet.</p><audio id="voxcpm2-player" controls hidden></audio><a id="voxcpm2-download" class="download" hidden>Download VoxCPM2 WAV</a><p id="voxcpm2-details" class="muted"></p><p id="voxcpm2-warning" class="result-warning" role="status" hidden></p><p id="voxcpm2-text" class="result-text"></p></article>
     </div></section>
     <footer>Only your selected excerpt goes to your Runpod endpoint. This website does not store recordings.<br>First generation can take longer while a GPU starts. Download audio you want to keep.</footer>
   </div>

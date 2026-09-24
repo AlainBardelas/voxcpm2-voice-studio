@@ -1,5 +1,5 @@
 import {pcm16Wav, toBase64, fromBase64, decodeMono} from './audio.mjs';
-import {MODELS, MAX_REFERENCE_SECONDS, JOB_LIFETIME_MS, referenceExcerpt, checkOutput} from './models.mjs';
+import {MODELS, MAX_REFERENCE_SECONDS, JOB_LIFETIME_MS, referenceExcerpt, checkOutput, resultWarning} from './models.mjs?v=3';
 
 const $ = id => document.getElementById(id);
 let key = '', endpoint = '', jobId = '', referenceUrl = '', referenceData = null;
@@ -86,6 +86,9 @@ async function showResult(output, executionTime, delayTime, model, submittedText
   $(`${model}-hint`).textContent = `Ready · ${output.cloning_mode || 'voice generation'}${output.reference_seconds ? ` · ${output.reference_seconds.toFixed(1)}s reference` : ''}`;
   $(`${model}-details`).textContent = `${decoded.duration.toFixed(1)} seconds · ${decoded.sampleRate.toLocaleString()} Hz · Generation ${(Number(executionTime || 0) / 1000).toFixed(1)}s · Queue/startup ${(Number(delayTime || 0) / 1000).toFixed(1)}s`;
   $(`${model}-text`).textContent = submittedText || 'Result restored after reconnecting. The original text is not saved in this tab.';
+  const warning = resultWarning(decoded.duration, submittedText);
+  $(`${model}-warning`).textContent = warning; $(`${model}-warning`).hidden = !warning;
+  return Boolean(warning);
 }
 
 async function poll(id, submitted, model, submittedText = '') {
@@ -104,8 +107,8 @@ async function poll(id, submitted, model, submittedText = '') {
       const elapsed = Math.round((Date.now() - submitted) / 1000);
       if (result.status === 'COMPLETED') {
         if (result.output?.error) { forgetJob(); throw new Error(result.output.error); }
-        await showResult(result.output, result.executionTime, result.delayTime, model, submittedText); forgetJob();
-        status(`${MODELS[model].label} audio is ready. Switch models to compare with the same inputs. The GPU shuts down automatically when idle.`); return;
+        const warning = await showResult(result.output, result.executionTime, result.delayTime, model, submittedText); forgetJob();
+        status(warning ? 'Audio returned, but it is unusually long for the text. Check the warning beside its player before using it.' : `${MODELS[model].label} audio is ready. Switch models to compare with the same inputs. The GPU shuts down automatically when idle.`); return;
       }
       if (['FAILED', 'CANCELLED', 'TIMED_OUT'].includes(result.status)) {
         forgetJob(); throw new Error(result.error || `Generation ${result.status.toLowerCase().replace('_', ' ')}. You can try again.`);
@@ -142,6 +145,7 @@ $('logout').addEventListener('click', () => {
     $(`${model}-player`).pause(); $(`${model}-player`).removeAttribute('src'); $(`${model}-player`).hidden = true;
     $(`${model}-download`).removeAttribute('href'); $(`${model}-download`).hidden = true;
     $(`${model}-hint`).textContent = 'No result yet.'; $(`${model}-details`).textContent = ''; $(`${model}-text`).textContent = '';
+    $(`${model}-warning`).textContent = ''; $(`${model}-warning`).hidden = true;
   }
   status('Studio locked.');
 });
